@@ -11,13 +11,9 @@
             <tr>
                 <th>ID</th>
                 <th>Foto</th>
+                <th>Cédula</th>
                 <th>Nombres</th>
                 <th>Apellidos</th>
-                <th>Cédula</th>
-                <th>RIF</th>
-                <th>Correo</th>
-                <th>Celular</th>
-                <th>Cargo</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -27,49 +23,119 @@
     </table>
 </div>
 
+<!-- Note: jQuery is loaded in header.php -->
+<!-- DataTables 2.0.8 & SweetAlert2 11 -->
+<script type="text/javascript" src="https://cdn.datatables.net/2.0.8/js/dataTables.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/2.0.8/js/dataTables.bootstrap5.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+<!-- Placeholder for page-specific scripts -->
+<?php if (isset($page_scripts)): ?>
+    <?php foreach ($page_scripts as $script): ?>
+        <script src="<?php echo base_url('assets/js/'.$script); ?>"></script>
+    <?php endforeach; ?>
+<?php endif; ?>
+
 <!-- Page specific script for DataTables initialization -->
 <script type="text/javascript">
-$(document).ready(function() {
-    $('#agentesTable').DataTable({
-        "processing": true,
-        "serverSide": true,
-        "ajax": {
-            "url": "<?php echo site_url('agentes/get_agentes_list_ss'); ?>",
-            "type": "POST"
+$(document).ready(function () {
+    var tabla = $('#agentesTable').DataTable({
+        processing: true,
+        serverSide: true,
+        responsive: true,
+        ajax: {
+            url: "<?php echo site_url('agentes/agentes_list'); ?>", // Updated URL
+            type: "POST"
         },
-        "columns": [
-            { "data": "id" },
-            {
-                "data": "foto_perfil",
-                "render": function(data, type, row) {
-                    var img_src = "<?php echo base_url('uploads/default_avatar.png'); ?>"; // Default avatar
-                    if (data && data.trim() !== '') {
-                        // Assuming 'data' contains a relative path like './uploads/agentes_fotos/file.jpg'
-                        // or an absolute URL if stored differently.
-                        // For './' relative paths from CI root:
-                        let relative_path = data.startsWith('./') ? data.substring(2) : data;
-                        img_src = "<?php echo base_url(); ?>" + relative_path;
-                    }
-                    return '<img src="' + img_src + '" alt="Foto Perfil" class="img-thumbnail" style="width:50px; height:50px; object-fit:cover;">';
-                },
-                "orderable": false // Typically, image columns are not sortable
-            },
-            { "data": "nombres" },
-            { "data": "apellidos" },
-            { "data": "cedula" },
-            { "data": "rif" },
-            { "data": "correo_electronico" },
-            { "data": "telefono_celular" },
-            { "data": "cargo_nombre" },
-            { "data": "actions", "orderable": false, "searchable": false }
+        // The 'data' property for each column should match a key in the JSON response from the server.
+        // The library's setOutput() method with associative keys will create this.
+        columns: [
+            { data: "id" },
+            { data: "foto_perfil" },
+            { data: "cedula" },
+            { data: "nombres" },
+            { data: "apellidos" },
+            { data: "actions" } // Column for CRUD buttons
         ],
-        "language": {
-            "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json" // Spanish language file for DataTables
-        },
-        "responsive": true,
-        "deferRender": true, // For speed with large datasets
-        "pageLength": 10, // Default number of rows per page
-        "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "Todos"]] // Page length options
+        columnDefs: [
+            {
+                targets: 1, // Corresponds to the 'foto_perfil' column
+                orderable: false,
+                searchable: false,
+                render: function (data, type, row) {
+                    // 'data' here is the value of 'foto_perfil' from the server
+                    // The server-side should handle path logic, but we can have a fallback
+                    const foto_url = data ? "<?php echo base_url(); ?>" + (data.startsWith('./') ? data.substring(2) : data) : "<?php echo base_url('uploads/default_avatar.png'); ?>";
+					const usuario = row.nombres + ' ' + row.apellidos;
+                    return `<img src="${foto_url}" class="rounded-circle" width="40" height="40" alt="${usuario}" title="${usuario}">`;
+                }
+            },
+            {
+                targets: 5, // Corresponds to the 'actions' column
+                orderable: false,
+                searchable: false,
+                render: function (data, type, row) {
+                    // 'data' here is the pre-formatted HTML for actions from the server
+                    // Or we can build it here if the server just sends the ID.
+                    // The server-side is already building this HTML, so 'data' will contain it.
+                    return data;
+                }
+            }
+        ],
+        language: {
+            url: "https://cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json"
+        }
+    });
+
+    console.log("El DataTable fue cargado correctamente");
+
+    // Evento para botón Eliminar (delegated event)
+    $('#agentesTable').on('click', '.eliminar', function () {
+        const id            = $(this).data('id');
+        const nombre        = $(this).data('nombre');
+        const foto          = $(this).data('foto'); // Corrected typo here
+		const nombre_agente = nombre; // 'nombre' from data-nombre attribute already contains full name
+        const deleteUrl     = "<?php echo site_url('agentes/delete/'); ?>" + id;
+
+        Swal.fire({
+            title: `¿Eliminar a ${nombre_agente}?`,
+            html: `<img src="${foto}" class="rounded-circle mb-3" width="80" alt="${nombre_agente}" title="${nombre_agente}"><br>Esta acción no se puede deshacer.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Use POST for the delete request as it's better practice for destructive actions
+                $.post(deleteUrl, { id: id, '<?php echo $this->security->get_csrf_token_name(); ?>':'<?php echo $this->security->get_csrf_hash(); ?>' }, function (response) {
+                    if(response.success) {
+                        Swal.fire({
+                            title: 'Eliminado',
+                            text: `El agente ${nombre_agente} fue eliminado exitosamente.`,
+                            icon: 'success',
+                            timer: 2500,
+                            showConfirmButton: false
+                        });
+                        tabla.ajax.reload(null, false); // Reload table without resetting pagination
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: response.message || 'No se pudo completar la eliminación.',
+                            icon: 'error'
+                        });
+                    }
+                }, 'json').fail(function () {
+                    Swal.fire({
+                        title: 'Error de Comunicación',
+                        text: 'No se pudo contactar al servidor.',
+                        icon: 'error'
+                    });
+                });
+            }
+        });
     });
 });
 </script>

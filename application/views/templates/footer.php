@@ -6,15 +6,13 @@
     </div>
 </footer>
 
-<!-- jQuery (ensure it's loaded before Bootstrap JS and other scripts) -->
-<script src="https://code.jquery.com/jquery-3.7.0.js"></script> <!-- Updated to a newer version of jQuery often used with newer DataTables -->
+<!-- jQuery is now loaded in header.php -->
 
-<!-- Bootstrap 5 JS Bundle (includes Popper) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Bootstrap 5.3.3 JS Bundle (includes Popper) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- DataTables JS -->
-<script type="text/javascript" src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<!-- DataTables JS is loaded specifically in the agentes/index view where it's needed -->
+<!-- This keeps other pages lighter. -->
 
 <!-- Placeholder for page-specific scripts -->
 <?php if (isset($page_scripts)): ?>

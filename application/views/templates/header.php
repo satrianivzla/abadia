@@ -4,15 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo isset($title) ? html_escape($title) . ' - App Agentes' : 'App Agentes'; ?></title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome CSS -->
+    <!-- Bootstrap 5.3.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome CSS (keeping 5.15.4 as it's stable and widely used) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <!-- DataTables Bootstrap 5 CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.bootstrap5.css">
+    <!-- jQuery 3.7.1 -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <style>
         body {
-            padding-top: 70px; /* Adjusted for fixed navbar */
+            padding-top: 80px; /* Adjusted for slightly taller fixed navbar if needed */
             background-color: #f8f9fa;
             display: flex;
             flex-direction: column;
@@ -89,6 +91,7 @@
 </nav>
 
 <div class="container mt-4 mb-4 container-main"> <!-- Added mb-4 for spacing before footer -->
+    <?php $this->load->view('templates/breadcrumb'); // Load the breadcrumb partial ?>
     <?php if($this->session->flashdata('message')): ?>
         <div class="alert alert-success alert-dismissible fade show" role="alert">
             <?php echo $this->session->flashdata('message'); ?>
