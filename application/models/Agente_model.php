@@ -21,7 +21,8 @@ class Agente_model extends CI_Model {
     public function set_builder_for_datatables() {
         $this->builder = $this->db
                               ->select('agentes.id, agentes.nombres, agentes.apellidos, agentes.cedula, agentes.rif, agentes.correo_electronico, agentes.telefono_celular, cargos.cargo as cargo_nombre, agentes.foto_perfil')
-                              ->join('cargos', 'agentes.id_cargo = cargos.id_cargo', 'left');
+                              ->join('cargos', 'agentes.id_cargo = cargos.id_cargo', 'left')
+                              ->where('agentes.deleted_at', NULL); // Only show active agents
     }
 
     // ------------------------------------------------------------------------
@@ -29,11 +30,12 @@ class Agente_model extends CI_Model {
     // ------------------------------------------------------------------------
 
     /**
-     * Get a single agent by ID
+     * Get a single ACTIVE agent by ID
      * @param int $id
+     * @param bool $include_deleted Set to true to fetch even if soft-deleted
      * @return object or NULL
      */
-    public function get_agent_by_id($id) {
+    public function get_agent_by_id($id, $include_deleted = false) {
         $this->db->select('a.*, c.cargo as cargo_nombre, est.estado as estado_nombre, ciu.ciudad as ciudad_nombre, mun.municipio as municipio_nombre, par.parroquia as parroquia_nombre');
         $this->db->from('agentes a');
         $this->db->join('cargos c', 'a.id_cargo = c.id_cargo', 'left');
@@ -42,6 +44,11 @@ class Agente_model extends CI_Model {
         $this->db->join('municipios mun', 'a.id_municipio = mun.id_municipio', 'left');
         $this->db->join('parroquias par', 'a.id_parroquia = par.id_parroquia', 'left');
         $this->db->where('a.id', $id);
+
+        if (!$include_deleted) {
+            $this->db->where('a.deleted_at', NULL);
+        }
+
         $query = $this->db->get();
         return $query->row();
     }
@@ -52,8 +59,7 @@ class Agente_model extends CI_Model {
      * @return int (insert ID) or false
      */
     public function insert_agent($data) {
-        $this->db->insert('agentes', $data);
-        return $this->db->insert_id();
+        return $this->db->insert('agentes', $data);
     }
 
     /**
@@ -68,13 +74,43 @@ class Agente_model extends CI_Model {
     }
 
     /**
-     * Delete an agent
+     * Soft delete an agent
+     * @param int $id
+     * @param int $user_id The ID of the user performing the deletion
+     * @return bool
+     */
+    public function delete_agent($id, $user_id) {
+        $data = [
+            'deleted_at' => date('Y-m-d H:i:s'),
+            'deleted_by' => $user_id
+        ];
+        $this->db->where('id', $id);
+        return $this->db->update('agentes', $data);
+    }
+
+    /**
+     * Restore a soft-deleted agent
      * @param int $id
      * @return bool
      */
-    public function delete_agent($id) {
+    public function restore_agent($id) {
+        $data = [
+            'deleted_at' => NULL,
+            'deleted_by' => NULL
+        ];
         $this->db->where('id', $id);
-        return $this->db->delete('agentes');
+        return $this->db->update('agentes', $data);
+    }
+
+    /**
+     * Provides a query builder object for fetching DELETED agents for DataTables.
+     * Includes joins to 'users' to show who deleted the agent.
+     */
+    public function get_deleted_agents_builder() {
+        return $this->db
+                     ->select('agentes.id, agentes.nombres, agentes.apellidos, agentes.cedula, agentes.deleted_at, u.first_name as deleted_by_firstname, u.last_name as deleted_by_lastname')
+                     ->join('users u', 'agentes.deleted_by = u.id', 'left')
+                     ->where('agentes.deleted_at IS NOT NULL');
     }
 
     // ------------------------------------------------------------------------

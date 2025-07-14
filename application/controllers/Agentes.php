@@ -8,9 +8,19 @@ class Agentes extends CI_Controller {
         $this->load->model('agente_model');
         $this->load->model('ion_auth_model');
 
+        // Check for login, except for public AJAX methods if any
         if (!$this->ion_auth->logged_in() &&
             !in_array($this->router->fetch_method(), ['get_ciudades', 'get_municipios', 'get_parroquias'])) {
             redirect('auth/login', 'refresh');
+        }
+
+        // Access control for sensitive methods
+        $sensitive_methods = ['delete', 'deleted_list', 'get_deleted_agentes_list', 'restore'];
+        if (in_array($this->router->fetch_method(), $sensitive_methods)) {
+            if (!$this->ion_auth->is_admin() && !$this->ion_auth->in_group('leadership')) {
+                $this->session->set_flashdata('error', 'No tienes permiso para realizar esta acción.');
+                redirect('agentes', 'refresh');
+            }
         }
     }
 
@@ -52,6 +62,7 @@ class Agentes extends CI_Controller {
             redirect('auth/login', 'refresh');
         }
 
+        // --- Form validation rules ---
         $this->form_validation->set_rules('nombres', 'Nombres', 'trim|required|max_length[100]');
         $this->form_validation->set_rules('apellidos', 'Apellidos', 'trim|required|max_length[100]');
         $this->form_validation->set_rules('cedula', 'Cédula', 'trim|required|max_length[20]|is_unique[agentes.cedula]');
@@ -95,7 +106,6 @@ class Agentes extends CI_Controller {
                 if (!is_dir($upload_path)) {
                     mkdir($upload_path, 0755, TRUE);
                 }
-
                 $cedula = $this->input->post('cedula');
                 $extension = pathinfo($_FILES['foto_perfil']['name'], PATHINFO_EXTENSION);
                 $filename = $cedula . '.' . strtolower($extension);
@@ -105,7 +115,6 @@ class Agentes extends CI_Controller {
                 $config['max_size'] = '2048';
                 $config['file_name'] = $filename;
                 $config['overwrite'] = TRUE;
-
                 $this->load->library('upload', $config);
                 $this->upload->initialize($config);
 
@@ -119,13 +128,11 @@ class Agentes extends CI_Controller {
                 }
             }
 
-            $insert_id = $this->agente_model->insert_agent($data);
-
-            if ($insert_id) {
+            if ($this->agente_model->insert_agent($data)) {
                 $this->session->set_flashdata('message', 'Agente registrado exitosamente.');
                 redirect('agentes', 'refresh');
             } else {
-                $this->session->set_flashdata('error', 'Error al registrar el agente. Intente nuevamente.');
+                $this->session->set_flashdata('error', 'Error al registrar el agente.');
                 $this->create();
             }
         }
@@ -159,7 +166,34 @@ class Agentes extends CI_Controller {
         $this->load->view('templates/footer');
     }
 
+    public function details($id) {
+        if (!$this->ion_auth->logged_in()) {
+            redirect('auth/login', 'refresh');
+        }
+
+        $agente = $this->agente_model->get_agent_by_id($id, true); // Include soft-deleted
+
+        if (empty($agente)) {
+            show_404();
+            return;
+        }
+
+        $data['title'] = 'Detalles del Agente';
+        $data['agente'] = $agente;
+        $data['breadcrumbs'] = [
+            ['label' => 'Inicio', 'url' => '/'],
+            ['label' => 'Agentes', 'url' => 'agentes'],
+            ['label' => 'Detalles', 'url' => '']
+        ];
+
+        $this->load->view('templates/header', $data);
+        $this->load->view('agentes/details', $data);
+        $this->load->view('templates/footer');
+    }
+
     public function update($id) {
+        // This method remains largely the same as before.
+        // ... (code for update) ...
         if (!$this->ion_auth->logged_in()) {
             redirect('auth/login', 'refresh');
         }
@@ -262,8 +296,8 @@ class Agentes extends CI_Controller {
     }
 
     public function delete($id) {
-        if (!$this->ion_auth->logged_in()) {
-            $this->output->set_status_header(401)->set_output(json_encode(['success' => false, 'message' => 'No autorizado.']));
+        if (!$this->ion_auth->logged_in() || (!$this->ion_auth->is_admin() && !$this->ion_auth->in_group('leadership'))) {
+            $this->output->set_status_header(403)->set_output(json_encode(['success' => false, 'message' => 'No autorizado.']));
             return;
         }
 
@@ -273,36 +307,29 @@ class Agentes extends CI_Controller {
         }
 
         $this->output->set_content_type('application/json');
+        $user_id = $this->ion_auth->user()->row()->id;
 
-        $agente = $this->agente_model->get_agent_by_id($id);
-        if (empty($agente)) {
-            $this->output->set_status_header(404)->set_output(json_encode(['success' => false, 'message' => 'Agente no encontrado.']));
-            return;
-        }
-
-        if (!empty($agente->foto_perfil) && file_exists($agente->foto_perfil)) {
-            unlink($agente->foto_perfil);
-        }
-
-        if ($this->agente_model->delete_agent($id)) {
-            echo json_encode(['success' => true, 'message' => 'Agente eliminado exitosamente.']);
+        if ($this->agente_model->delete_agent($id, $user_id)) {
+            echo json_encode(['success' => true, 'message' => 'Agente movido a la papelera.']);
         } else {
-            $this->output->set_status_header(500)->set_output(json_encode(['success' => false, 'message' => 'Error al eliminar el agente de la base de datos.']));
+            $this->output->set_status_header(500)->set_output(json_encode(['success' => false, 'message' => 'Error al eliminar el agente.']));
         }
     }
 
 	public function get_ciudades() {
-		$estado_id = $this->input->post('estado_id');
-		$ciudades = [];
-		if ($estado_id) {
-			$ciudades = $this->agente_model->get_ciudades_by_estado($estado_id);
-		}
-		$this->output
-			->set_content_type('application/json')
-			->set_output(json_encode($ciudades));
+		// ... (same as before) ...
+        $estado_id = $this->input->post('estado_id');
+        $ciudades = [];
+        if ($estado_id) {
+            $ciudades = $this->agente_model->get_ciudades_by_estado($estado_id);
+        }
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($ciudades));
 	}
 
     public function get_municipios() {
+        // ... (same as before) ...
         $estado_id = $this->input->post('estado_id');
         if ($estado_id) {
             $municipios = $this->agente_model->get_municipios_by_estado($estado_id);
@@ -313,6 +340,7 @@ class Agentes extends CI_Controller {
     }
 
     public function get_parroquias() {
+        // ... (same as before) ...
         $municipio_id = $this->input->post('municipio_id');
         if ($municipio_id) {
             $parroquias = $this->agente_model->get_parroquias_by_municipio($municipio_id);
@@ -324,22 +352,18 @@ class Agentes extends CI_Controller {
 
 	public function agentes_list()
 	{
+		// ... (same as before) ...
 		$this->load->library('TablesIgniterCI3', NULL, 'table');
 		$this->load->model('Agente_model','model');
-
 		$this->table->setTable($this->model->builder, "agentes");
-
         $this->table->setSearch(['agentes.cedula', 'agentes.nombres', 'agentes.apellidos']);
-
         $this->table->setDefaultOrder("id", "DESC");
-
         $this->table->setOrder([
             0 => 'agentes.id',
             2 => 'agentes.cedula',
             3 => 'agentes.nombres',
             4 => 'agentes.apellidos',
         ]);
-
 		$this->table->setOutput([
             'id',
             'foto_perfil' => function($row) {
@@ -349,7 +373,77 @@ class Agentes extends CI_Controller {
             'nombres',
             'apellidos',
         ]);
-
 		echo $this->table->getDatatable();
 	}
+
+    // --- NEW METHODS FOR SOFT DELETE ---
+
+    public function deleted_list() {
+        if (!$this->ion_auth->is_admin() && !$this->ion_auth->in_group('leadership')) {
+             $this->session->set_flashdata('error', 'No tienes permiso para ver esta página.');
+            redirect('/', 'refresh');
+        }
+
+        $data['title'] = 'Agentes Eliminados (Papelera)';
+        $data['breadcrumbs'] = [
+            ['label' => 'Inicio', 'url' => '/'],
+            ['label' => 'Agentes', 'url' => 'agentes'],
+            ['label' => 'Papelera', 'url' => '']
+        ];
+
+        $this->load->view('templates/header', $data);
+        $this->load->view('agentes/deleted_list', $data);
+        $this->load->view('templates/footer');
+    }
+
+    public function get_deleted_agentes_list() {
+        if (!$this->ion_auth->is_admin() && !$this->ion_auth->in_group('leadership')) {
+            $this->output->set_status_header(403)->set_output(json_encode(['error' => 'Forbidden']));
+            return;
+        }
+
+        $this->load->library('TablesIgniterCI3', NULL, 'table');
+        $this->load->model('Agente_model','model');
+
+        $builder = $this->model->get_deleted_agents_builder();
+        $this->table->setTable($builder, 'agentes');
+
+        $this->table->setDefaultOrder("deleted_at", "DESC");
+        $this->table->setSearch(['agentes.cedula', 'agentes.nombres', 'agentes.apellidos']);
+        $this->table->setOrder([
+            0 => 'agentes.id',
+            1 => 'agentes.cedula',
+            2 => 'agentes.nombres',
+            3 => 'agentes.apellidos',
+            4 => 'agentes.deleted_at',
+            5 => 'deleted_by_firstname',
+        ]);
+
+        $this->table->setOutput([
+            'id', 'cedula', 'nombres', 'apellidos', 'deleted_at',
+            'deleted_by' => function($row) {
+                return html_escape($row['deleted_by_firstname'] . ' ' . $row['deleted_by_lastname']);
+            },
+            'actions' => function($row) {
+                $restore_url = site_url('agentes/restore/'.$row['id']);
+                return '<a href="'.$restore_url.'" class="btn btn-sm btn-success" onclick="return confirm(\'¿Está seguro de que desea restaurar este agente?\');"><i class="fas fa-undo"></i> Restaurar</a>';
+            }
+        ]);
+
+        echo $this->table->getDatatable();
+    }
+
+    public function restore($id) {
+        if (!$this->ion_auth->is_admin() && !$this->ion_auth->in_group('leadership')) {
+            $this->session->set_flashdata('error', 'No tienes permiso para realizar esta acción.');
+            redirect('agentes/deleted_list', 'refresh');
+        }
+
+        if ($this->agente_model->restore_agent($id)) {
+            $this->session->set_flashdata('message', 'Agente restaurado exitosamente.');
+        } else {
+            $this->session->set_flashdata('error', 'Error al restaurar el agente.');
+        }
+        redirect('agentes/deleted_list', 'refresh');
+    }
 }

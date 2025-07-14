@@ -1,8 +1,15 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1><?php echo html_escape($title); ?></h1>
-    <a href="<?php echo site_url('agentes/create'); ?>" class="btn btn-primary">
-        <i class="fas fa-plus"></i> Nuevo Agente
-    </a>
+    <div>
+        <?php if ($this->ion_auth->is_admin() || $this->ion_auth->in_group('leadership')): ?>
+            <a href="<?php echo site_url('agentes/deleted_list'); ?>" class="btn btn-warning">
+                <i class="fas fa-trash-alt"></i> Papelera
+            </a>
+        <?php endif; ?>
+        <a href="<?php echo site_url('agentes/create'); ?>" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nuevo Agente
+        </a>
+    </div>
 </div>
 
 <div class="table-responsive">
