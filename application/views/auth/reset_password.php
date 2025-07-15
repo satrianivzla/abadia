@@ -9,20 +9,14 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <!-- Bootstrap 5.3 -->
+  <!-- Bootstrap 5.3 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- AdminLTE Theme style -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
 
   <style>
-    body {
-      background-color: #f4f6f9;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-    }
-    .login-box {
-      width: 360px;
-    }
+    body { background-color: #f4f6f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .login-box { width: 380px; }
   </style>
 </head>
 <body class="hold-transition login-page">
@@ -43,17 +37,21 @@
 
       <?php echo form_open('auth/reset_password/' . $code);?>
         <div class="input-group mb-3">
-            <?php echo form_input($new_password);?>
+          <?php echo form_input($new_password);?>
+          <div class="input-group-append">
             <div class="input-group-text">
                 <span class="fas fa-lock"></span>
             </div>
+          </div>
         </div>
 
         <div class="input-group mb-3">
-            <?php echo form_input($new_password_confirm);?>
+          <?php echo form_input($new_password_confirm);?>
+          <div class="input-group-append">
             <div class="input-group-text">
                 <span class="fas fa-lock"></span>
             </div>
+          </div>
         </div>
 
         <?php echo form_input($user_id);?>
@@ -77,7 +75,7 @@
 
 <!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<!-- Bootstrap 5.3 JS -->
+<!-- Bootstrap 5.3 JS Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
