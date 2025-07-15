@@ -123,6 +123,36 @@ class Afiliaciones extends CI_Controller {
                 'created_by'      => $this->ion_auth->user()->row()->id,
             ];
 
+            // --- Create Ion Auth User for the new Titular ---
+            $titular_email = $titular_data['correo_electronico']; // Assuming email is collected for titular
+            $titular_password = $titular_data['cedula']; // Use cedula as initial password
+            $titular_user_data = [
+                'first_name' => $titular_data['nombres'],
+                'last_name' => $titular_data['apellidos'],
+            ];
+            $client_group = $this->ion_auth->group_by_name('Cliente');
+            if(empty($client_group)){
+                 $this->session->set_flashdata('error', 'El grupo de sistema "Cliente" no existe. Por favor, créelo primero.');
+                 redirect('afiliaciones/create', 'refresh');
+                 return;
+            }
+            $client_group_id = [$client_group->id];
+
+            // Before registering, check if a user for this titular already exists
+            $existing_user = $this->ion_auth->user_by_email($titular_email);
+            if(!$existing_user){
+                $titular_user_id = $this->ion_auth->register($titular_email, $titular_password, $titular_email, $titular_user_data, $client_group_id);
+                if(!$titular_user_id){
+                    $this->session->set_flashdata('error', 'Error al crear el usuario de sistema para el titular: ' . $this->ion_auth->errors());
+                    redirect('afiliaciones/create', 'refresh');
+                    return;
+                }
+                $titular_data['user_id'] = $titular_user_id;
+            } else {
+                $titular_data['user_id'] = $existing_user->id; // Link to existing user
+            }
+            // --- End of User Creation ---
+
             // Save everything via the model's transaction
             $afiliacion_id = $this->afiliacion_model->save_afiliacion($afiliacion_data, $titular_data, $familiares);
 

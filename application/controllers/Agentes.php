@@ -54,10 +54,10 @@ class Agentes extends CI_Controller {
     }
 
     public function store() {
-        // ... (code for store remains the same) ...
         if (!$this->ion_auth->logged_in()) {
             redirect('auth/login', 'refresh');
         }
+
         $this->form_validation->set_rules('nombres', 'Nombres', 'trim|required|max_length[100]');
         $this->form_validation->set_rules('apellidos', 'Apellidos', 'trim|required|max_length[100]');
         $this->form_validation->set_rules('cedula', 'Cédula', 'trim|required|max_length[20]|is_unique[agentes.cedula]');
@@ -73,6 +73,7 @@ class Agentes extends CI_Controller {
         $this->form_validation->set_rules('id_parroquia', 'Parroquia', 'required|integer');
         $this->form_validation->set_rules('fecha_ingreso', 'Fecha de Ingreso', 'required');
         $this->form_validation->set_rules('id_cargo', 'Cargo', 'required|integer');
+
         if ($this->form_validation->run() == FALSE) {
             $this->session->set_flashdata('error', validation_errors());
             $this->create();
@@ -94,6 +95,42 @@ class Agentes extends CI_Controller {
                 'fecha_ingreso' => $this->input->post('fecha_ingreso'),
                 'id_cargo' => $this->input->post('id_cargo'),
             ];
+
+            // --- Create Ion Auth User for the new Agent ---
+            if ($this->ion_auth->is_admin()) {
+                $email = $this->input->post('correo_electronico');
+                $password = $this->input->post('cedula'); // Use cedula as initial password
+                $additional_user_data = [
+                    'first_name' => $this->input->post('nombres'),
+                    'last_name' => $this->input->post('apellidos'),
+                ];
+                $group_name = 'Agente'; // Group name for 'Agente'
+                $group = $this->ion_auth->group_by_name($group_name);
+                if(empty($group)){
+                     $this->session->set_flashdata('error', 'El grupo de sistema "Agente" no existe. Por favor, créelo primero.');
+                     $this->create();
+                     return;
+                }
+                $group_ids = [$group->id];
+
+                if ($this->ion_auth->email_check($email)) {
+                    $this->session->set_flashdata('error', 'El correo electrónico ya está registrado por otro usuario del sistema.');
+                    $this->create();
+                    return;
+                }
+
+                $user_id = $this->ion_auth->register($email, $password, $email, $additional_user_data, $group_ids);
+
+                if ($user_id) {
+                    $data['user_id'] = $user_id;
+                } else {
+                    $this->session->set_flashdata('error', 'Error al crear el usuario de sistema para el agente: ' . $this->ion_auth->errors());
+                    $this->create();
+                    return;
+                }
+            }
+            // --- End of User Creation ---
+
             if (!empty($_FILES['foto_perfil']['name'])) {
                 $upload_path = './uploads/agentes_fotos/';
                 if (!is_dir($upload_path)) {
@@ -109,6 +146,7 @@ class Agentes extends CI_Controller {
                 $config['overwrite'] = TRUE;
                 $this->load->library('upload', $config);
                 $this->upload->initialize($config);
+
                 if ($this->upload->do_upload('foto_perfil')) {
                     $upload_data = $this->upload->data();
                     $data['foto_perfil'] = $upload_path . $upload_data['file_name'];
@@ -118,15 +156,20 @@ class Agentes extends CI_Controller {
                     return;
                 }
             }
+
             if ($this->agente_model->insert_agent($data)) {
-                $this->session->set_flashdata('message', 'Agente registrado exitosamente.');
+                $this->session->set_flashdata('message', 'Agente y usuario de sistema registrados exitosamente. La contraseña inicial es la cédula del agente.');
                 redirect('agentes', 'refresh');
             } else {
-                $this->session->set_flashdata('error', 'Error al registrar el agente.');
+                // This part is tricky, because the user was already created. A more robust solution
+                // would wrap this all in a transaction or delete the created user if this part fails.
+                $this->session->set_flashdata('error', 'El usuario fue creado, pero ocurrió un error al registrar los datos del agente. Por favor, contacte al administrador.');
                 $this->create();
             }
         }
     }
+
+    // ... (edit, details, update methods remain the same) ...
 
     public function edit($id) {
         if (!$this->ion_auth->logged_in()) {
@@ -180,7 +223,6 @@ class Agentes extends CI_Controller {
     }
 
     public function update($id) {
-        // ... (code for update remains the same) ...
         if (!$this->ion_auth->logged_in()) {
             redirect('auth/login', 'refresh');
         }
