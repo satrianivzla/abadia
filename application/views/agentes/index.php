@@ -1,7 +1,8 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1><?php echo html_escape($title); ?></h1>
     <div>
-        <?php if ($this->ion_auth->is_admin() || $this->ion_auth->in_group('leadership')): ?>
+        <?php $leadership_groups = ['admin', 'Gerente General', 'Gerente de Zona', 'Supervisor']; ?>
+        <?php if ($this->ion_auth->in_group($leadership_groups)): ?>
             <a href="<?php echo site_url('agentes/deleted_list'); ?>" class="btn btn-warning">
                 <i class="fas fa-trash-alt"></i> Papelera
             </a>

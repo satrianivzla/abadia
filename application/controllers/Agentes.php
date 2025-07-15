@@ -15,10 +15,12 @@ class Agentes extends CI_Controller {
 
         // Access control for sensitive methods
         $sensitive_methods = ['delete', 'deleted_list', 'get_deleted_agentes_list', 'restore'];
+        $leadership_groups = ['admin', 'Gerente General', 'Gerente de Zona', 'Supervisor']; // Define leadership roles
+
         if (in_array($this->router->fetch_method(), $sensitive_methods)) {
-            if (!$this->ion_auth->is_admin() && !$this->ion_auth->in_group('leadership')) {
+            if (!$this->ion_auth->in_group($leadership_groups)) {
                 $this->session->set_flashdata('error', 'No tienes permiso para realizar esta acción.');
-                redirect('agentes', 'refresh');
+                redirect('dashboard', 'refresh'); // Redirect to their own dashboard
             }
         }
     }
