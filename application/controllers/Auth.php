@@ -52,13 +52,12 @@ class Auth extends CI_Controller
 
             $this->data['title'] = "Users";
             $this->data['breadcrumbs'] = [
-                ['label' => 'Inicio', 'url' => '/'],
+                ['label' => 'Dashboard', 'url' => 'dashboard'],
                 ['label' => 'Users', 'url' => '']
             ];
+            $this->data['main_content'] = 'auth/index';
 
-            $this->load->view('templates/header', $this->data);
-			$this->load->view('auth/index', $this->data);
-            $this->load->view('templates/footer');
+            $this->load->view('templates/adminlte_layout', $this->data);
 		}
 	}
 
@@ -122,9 +121,10 @@ class Auth extends CI_Controller
                 'placeholder' => 'Password'
 			];
 
-            $this->load->view('templates/header', $this->data);
+            // The login page is special and doesn't use the full layout
+            $this->load->view('auth/login_header', $this->data);
 			$this->load->view('auth/login', $this->data);
-            $this->load->view('templates/footer');
+            $this->load->view('auth/login_footer');
 		}
 	}
 
@@ -201,9 +201,8 @@ class Auth extends CI_Controller
             $this->data['csrf'] = $this->_get_csrf_nonce();
 
 			// render
-            $this->load->view('templates/header', $this->data);
-			$this->load->view('auth/change_password', $this->data);
-            $this->load->view('templates/footer');
+            $this->data['main_content'] = 'auth/change_password';
+			$this->load->view('templates/adminlte_layout', $this->data);
 		}
 		else
 		{
@@ -267,9 +266,9 @@ class Auth extends CI_Controller
 
 			// set any errors and display the form
 			$this->data['message'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('message');
-            $this->load->view('templates/header', $this->data);
+            $this->load->view('auth/login_header', $this->data);
 			$this->load->view('auth/forgot_password', $this->data);
-            $this->load->view('templates/footer');
+            $this->load->view('auth/login_footer');
 		}
 		else
 		{
@@ -365,9 +364,9 @@ class Auth extends CI_Controller
                 $this->data['csrf'] = $this->_get_csrf_nonce();
 
 				// render
-                $this->load->view('templates/header', $this->data);
+                $this->load->view('auth/login_header', $this->data);
 				$this->load->view('auth/reset_password', $this->data);
-                $this->load->view('templates/footer');
+                $this->load->view('auth/login_footer');
 			}
 			else
 			{

@@ -8,7 +8,6 @@ class Agentes extends CI_Controller {
         $this->load->model('agente_model');
         $this->load->model('ion_auth_model');
 
-        // Check for login, except for public AJAX methods if any
         if (!$this->ion_auth->logged_in() &&
             !in_array($this->router->fetch_method(), ['get_ciudades', 'get_municipios', 'get_parroquias'])) {
             redirect('auth/login', 'refresh');
@@ -30,13 +29,11 @@ class Agentes extends CI_Controller {
         }
         $data['title'] = 'Listado de Agentes';
         $data['breadcrumbs'] = [
-            ['label' => 'Inicio', 'url' => '/'],
+            ['label' => 'Inicio', 'url' => 'dashboard'],
             ['label' => 'Agentes', 'url' => '']
         ];
-
-        $this->load->view('templates/header', $data);
-        $this->load->view('agentes/index', $data);
-        $this->load->view('templates/footer');
+        $data['main_content'] = 'agentes/index';
+        $this->load->view('templates/adminlte_layout', $data);
     }
 
     public function create() {
@@ -45,24 +42,22 @@ class Agentes extends CI_Controller {
         }
         $data['title'] = 'Nuevo Agente de Ventas';
         $data['breadcrumbs'] = [
-            ['label' => 'Inicio', 'url' => '/'],
+            ['label' => 'Inicio', 'url' => 'dashboard'],
             ['label' => 'Agentes', 'url' => 'agentes'],
             ['label' => 'Nuevo', 'url' => '']
         ];
         $data['estados'] = $this->agente_model->get_estados();
         $data['cargos'] = $this->agente_model->get_cargos();
 
-        $this->load->view('templates/header', $data);
-        $this->load->view('agentes/create', $data);
-        $this->load->view('templates/footer');
+        $data['main_content'] = 'agentes/create';
+        $this->load->view('templates/adminlte_layout', $data);
     }
 
     public function store() {
+        // ... (code for store remains the same) ...
         if (!$this->ion_auth->logged_in()) {
             redirect('auth/login', 'refresh');
         }
-
-        // --- Form validation rules ---
         $this->form_validation->set_rules('nombres', 'Nombres', 'trim|required|max_length[100]');
         $this->form_validation->set_rules('apellidos', 'Apellidos', 'trim|required|max_length[100]');
         $this->form_validation->set_rules('cedula', 'Cédula', 'trim|required|max_length[20]|is_unique[agentes.cedula]');
@@ -78,7 +73,6 @@ class Agentes extends CI_Controller {
         $this->form_validation->set_rules('id_parroquia', 'Parroquia', 'required|integer');
         $this->form_validation->set_rules('fecha_ingreso', 'Fecha de Ingreso', 'required');
         $this->form_validation->set_rules('id_cargo', 'Cargo', 'required|integer');
-
         if ($this->form_validation->run() == FALSE) {
             $this->session->set_flashdata('error', validation_errors());
             $this->create();
@@ -100,7 +94,6 @@ class Agentes extends CI_Controller {
                 'fecha_ingreso' => $this->input->post('fecha_ingreso'),
                 'id_cargo' => $this->input->post('id_cargo'),
             ];
-
             if (!empty($_FILES['foto_perfil']['name'])) {
                 $upload_path = './uploads/agentes_fotos/';
                 if (!is_dir($upload_path)) {
@@ -109,7 +102,6 @@ class Agentes extends CI_Controller {
                 $cedula = $this->input->post('cedula');
                 $extension = pathinfo($_FILES['foto_perfil']['name'], PATHINFO_EXTENSION);
                 $filename = $cedula . '.' . strtolower($extension);
-
                 $config['upload_path'] = $upload_path;
                 $config['allowed_types'] = 'gif|jpg|jpeg|png';
                 $config['max_size'] = '2048';
@@ -117,7 +109,6 @@ class Agentes extends CI_Controller {
                 $config['overwrite'] = TRUE;
                 $this->load->library('upload', $config);
                 $this->upload->initialize($config);
-
                 if ($this->upload->do_upload('foto_perfil')) {
                     $upload_data = $this->upload->data();
                     $data['foto_perfil'] = $upload_path . $upload_data['file_name'];
@@ -127,7 +118,6 @@ class Agentes extends CI_Controller {
                     return;
                 }
             }
-
             if ($this->agente_model->insert_agent($data)) {
                 $this->session->set_flashdata('message', 'Agente registrado exitosamente.');
                 redirect('agentes', 'refresh');
@@ -151,7 +141,7 @@ class Agentes extends CI_Controller {
         }
 
         $data['breadcrumbs'] = [
-            ['label' => 'Inicio', 'url' => '/'],
+            ['label' => 'Inicio', 'url' => 'dashboard'],
             ['label' => 'Agentes', 'url' => 'agentes'],
             ['label' => 'Editar', 'url' => '']
         ];
@@ -161,9 +151,8 @@ class Agentes extends CI_Controller {
         $data['municipios'] = $this->agente_model->get_municipios_by_estado($data['agente']->id_estado);
         $data['parroquias'] = $this->agente_model->get_parroquias_by_municipio($data['agente']->id_municipio);
 
-        $this->load->view('templates/header', $data);
-        $this->load->view('agentes/edit', $data);
-        $this->load->view('templates/footer');
+        $data['main_content'] = 'agentes/edit';
+        $this->load->view('templates/adminlte_layout', $data);
     }
 
     public function details($id) {
@@ -171,7 +160,7 @@ class Agentes extends CI_Controller {
             redirect('auth/login', 'refresh');
         }
 
-        $agente = $this->agente_model->get_agent_by_id($id, true); // Include soft-deleted
+        $agente = $this->agente_model->get_agent_by_id($id, true);
 
         if (empty($agente)) {
             show_404();
@@ -181,19 +170,17 @@ class Agentes extends CI_Controller {
         $data['title'] = 'Detalles del Agente';
         $data['agente'] = $agente;
         $data['breadcrumbs'] = [
-            ['label' => 'Inicio', 'url' => '/'],
+            ['label' => 'Inicio', 'url' => 'dashboard'],
             ['label' => 'Agentes', 'url' => 'agentes'],
             ['label' => 'Detalles', 'url' => '']
         ];
 
-        $this->load->view('templates/header', $data);
-        $this->load->view('agentes/details', $data);
-        $this->load->view('templates/footer');
+        $data['main_content'] = 'agentes/details';
+        $this->load->view('templates/adminlte_layout', $data);
     }
 
     public function update($id) {
-        // This method remains largely the same as before.
-        // ... (code for update) ...
+        // ... (code for update remains the same) ...
         if (!$this->ion_auth->logged_in()) {
             redirect('auth/login', 'refresh');
         }
@@ -202,7 +189,6 @@ class Agentes extends CI_Controller {
             show_404();
             return;
         }
-
         $this->form_validation->set_rules('nombres', 'Nombres', 'trim|required|max_length[100]');
         $this->form_validation->set_rules('apellidos', 'Apellidos', 'trim|required|max_length[100]');
         $original_cedula = $agente->cedula;
@@ -233,7 +219,6 @@ class Agentes extends CI_Controller {
         $this->form_validation->set_rules('id_parroquia', 'Parroquia', 'required|integer');
         $this->form_validation->set_rules('fecha_ingreso', 'Fecha de Ingreso', 'required');
         $this->form_validation->set_rules('id_cargo', 'Cargo', 'required|integer');
-
         if ($this->form_validation->run() == FALSE) {
             $this->session->set_flashdata('error', validation_errors());
             $this->edit($id);
@@ -255,26 +240,21 @@ class Agentes extends CI_Controller {
                 'fecha_ingreso' => $this->input->post('fecha_ingreso'),
                 'id_cargo' => $this->input->post('id_cargo'),
             ];
-
             if (!empty($_FILES['foto_perfil']['name'])) {
                 $upload_path = './uploads/agentes_fotos/';
                  if (!is_dir($upload_path)) {
                     mkdir($upload_path, 0755, TRUE);
                 }
-
                 $cedula = $this->input->post('cedula');
                 $extension = pathinfo($_FILES['foto_perfil']['name'], PATHINFO_EXTENSION);
                 $filename = $cedula . '.' . strtolower($extension);
-
                 $config['upload_path'] = $upload_path;
                 $config['allowed_types'] = 'gif|jpg|jpeg|png';
                 $config['max_size'] = '2048';
                 $config['file_name'] = $filename;
                 $config['overwrite'] = TRUE;
-
                 $this->load->library('upload', $config);
                 $this->upload->initialize($config);
-
                 if ($this->upload->do_upload('foto_perfil')) {
                     $upload_data = $this->upload->data();
                     $data['foto_perfil'] = $upload_path . $upload_data['file_name'];
@@ -284,31 +264,28 @@ class Agentes extends CI_Controller {
                     return;
                 }
             }
-
             if ($this->agente_model->update_agent($id, $data)) {
                 $this->session->set_flashdata('message', 'Agente actualizado exitosamente.');
                 redirect('agentes', 'refresh');
             } else {
-                $this->session->set_flashdata('error', 'Error al actualizar el agente. Intente nuevamente.');
+                $this->session->set_flashdata('error', 'Error al actualizar el agente.');
                 $this->edit($id);
             }
         }
     }
 
     public function delete($id) {
+        // ... (code for delete remains the same) ...
         if (!$this->ion_auth->logged_in() || (!$this->ion_auth->is_admin() && !$this->ion_auth->in_group('leadership'))) {
             $this->output->set_status_header(403)->set_output(json_encode(['success' => false, 'message' => 'No autorizado.']));
             return;
         }
-
         if (!$this->input->is_ajax_request() || $this->input->method() !== 'post') {
             $this->output->set_status_header(400)->set_output(json_encode(['success' => false, 'message' => 'Método de solicitud no válido.']));
             return;
         }
-
         $this->output->set_content_type('application/json');
         $user_id = $this->ion_auth->user()->row()->id;
-
         if ($this->agente_model->delete_agent($id, $user_id)) {
             echo json_encode(['success' => true, 'message' => 'Agente movido a la papelera.']);
         } else {
@@ -376,8 +353,6 @@ class Agentes extends CI_Controller {
 		echo $this->table->getDatatable();
 	}
 
-    // --- NEW METHODS FOR SOFT DELETE ---
-
     public function deleted_list() {
         if (!$this->ion_auth->is_admin() && !$this->ion_auth->in_group('leadership')) {
              $this->session->set_flashdata('error', 'No tienes permiso para ver esta página.');
@@ -386,14 +361,12 @@ class Agentes extends CI_Controller {
 
         $data['title'] = 'Agentes Eliminados (Papelera)';
         $data['breadcrumbs'] = [
-            ['label' => 'Inicio', 'url' => '/'],
+            ['label' => 'Inicio', 'url' => 'dashboard'],
             ['label' => 'Agentes', 'url' => 'agentes'],
             ['label' => 'Papelera', 'url' => '']
         ];
-
-        $this->load->view('templates/header', $data);
-        $this->load->view('agentes/deleted_list', $data);
-        $this->load->view('templates/footer');
+        $data['main_content'] = 'agentes/deleted_list';
+        $this->load->view('templates/adminlte_layout', $data);
     }
 
     public function get_deleted_agentes_list() {
@@ -426,7 +399,9 @@ class Agentes extends CI_Controller {
             },
             'actions' => function($row) {
                 $restore_url = site_url('agentes/restore/'.$row['id']);
-                return '<a href="'.$restore_url.'" class="btn btn-sm btn-success" onclick="return confirm(\'¿Está seguro de que desea restaurar este agente?\');"><i class="fas fa-undo"></i> Restaurar</a>';
+                $details_url = site_url('agentes/details/'.$row['id']);
+                return '<a href="'.$restore_url.'" class="btn btn-sm btn-success" onclick="return confirm(\'¿Está seguro de que desea restaurar este agente?\');"><i class="fas fa-undo"></i> Restaurar</a> ' .
+                       '<a href="'.$details_url.'" class="btn btn-sm btn-info"><i class="fas fa-eye"></i> Ver</a>';
             }
         ]);
 

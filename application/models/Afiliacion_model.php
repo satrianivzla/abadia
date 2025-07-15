@@ -138,6 +138,71 @@ class Afiliacion_model extends CI_Model {
 
         return $afiliacion;
     }
+
+    // --- Methods for Dashboards ---
+
+    /**
+     * Get affiliations for a specific sales agent.
+     * @param int $asesor_id The ID of the agent (from 'agentes' table)
+     * @return array
+     */
+    public function get_afiliaciones_by_asesor_id($asesor_id) {
+        $this->db->select('af.*, p.nombres as titular_nombres, p.apellidos as titular_apellidos');
+        $this->db->from('afiliaciones af');
+        $this->db->join('personas p', 'af.titular_id = p.id');
+        $this->db->where('af.asesor_id', $asesor_id);
+        $query = $this->db->get();
+        return $query->result();
+    }
+
+    /**
+     * Get an affiliation for a specific client based on their user_id.
+     * This assumes a client is a 'persona' and that the 'personas' table has a 'user_id' column.
+     * We need to add 'user_id' to the 'personas' table first.
+     * @param int $user_id The client's user ID from Ion Auth
+     * @return object|null
+     */
+    public function get_afiliacion_by_client_user_id($user_id) {
+        // First, find the persona_id from the user_id
+        $persona = $this->db->get_where('personas', ['user_id' => $user_id])->row();
+        if (!$persona) {
+            return null;
+        }
+
+        // Now find the affiliation where this persona is the titular
+        return $this->get_afiliacion_by_titular_persona_id($persona->id);
+    }
+
+    /**
+     * Get an affiliation by the titular's persona ID.
+     * @param int $titular_persona_id
+     * @return object|null
+     */
+    public function get_afiliacion_by_titular_persona_id($titular_persona_id) {
+        $this->db->where('titular_id', $titular_persona_id);
+        $query = $this->db->get('afiliaciones', 1); // Get the first one found
+
+        if($query->num_rows() > 0) {
+            return $this->get_afiliacion_by_id($query->row()->id);
+        }
+        return null;
+    }
+
+
+    /**
+     * Count affiliations for a specific agent, grouped by a status column.
+     * (Requires adding a 'status' column to the 'afiliaciones' table).
+     * @param int $asesor_id
+     * @return array
+     */
+    public function count_by_status_for_asesor($asesor_id) {
+        $this->db->select('status, COUNT(id) as count');
+        $this->db->from('afiliaciones');
+        $this->db->where('asesor_id', $asesor_id);
+        $this->db->group_by('status');
+        $query = $this->db->get();
+        return $query->result();
+    }
 }
 /* End of file Afiliacion_model.php */
 /* Location: ./application/models/Afiliacion_model.php */

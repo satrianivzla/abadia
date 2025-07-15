@@ -29,9 +29,8 @@ class Afiliaciones extends CI_Controller {
         // Fetch active agents to act as advisors
         $data['asesores'] = $this->agente_model->get_all_agentes();
 
-        $this->load->view('templates/header', $data);
-        $this->load->view('afiliaciones/create', $data);
-        $this->load->view('templates/footer');
+        $data['main_content'] = 'afiliaciones/create';
+        $this->load->view('templates/adminlte_layout', $data);
     }
 
     /**

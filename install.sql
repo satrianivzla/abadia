@@ -22,9 +22,12 @@ CREATE TABLE `groups` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT INTO `groups` (`id`, `name`, `description`) VALUES
-(1,'admin','Administrator'),
-(2,'members','General User'),
-(3,'leadership', 'Branch Office Team Leadership'); -- Added leadership group
+(1, 'admin', 'Administrator'),
+(2, 'Gerente General', 'General Manager - Top Level'),
+(3, 'Gerente de Zona', 'Zone Manager'),
+(4, 'Supervisor', 'Team Supervisor'),
+(5, 'Agente', 'Sales Agent'),
+(6, 'Cliente', 'Standard Client/Member');
 
 CREATE TABLE `users` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,

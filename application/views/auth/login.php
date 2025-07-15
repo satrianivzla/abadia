@@ -1,43 +1,37 @@
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-        <div class="card shadow-sm">
-            <div class="card-header text-center">
-                <h3><?php echo lang('login_heading');?></h3>
-                <p class="text-muted"><?php echo lang('login_subheading');?></p>
-            </div>
-            <div class="card-body">
-                <?php if (isset($message) && !empty($message)): ?>
-                    <div id="infoMessage" class="alert alert-danger" role="alert">
-                        <?php echo $message;?>
-                    </div>
-                <?php endif; ?>
-
-                <?php echo form_open("auth/login");?>
-
-                    <div class="mb-3">
-                        <?php echo lang('login_identity_label', 'identity', ['class' => 'form-label']);?>
-                        <?php echo form_input($identity);?>
-                    </div>
-
-                    <div class="mb-3">
-                        <?php echo lang('login_password_label', 'password', ['class' => 'form-label']);?>
-                        <?php echo form_input($password);?>
-                    </div>
-
-                    <div class="mb-3 form-check">
-                        <?php echo form_checkbox('remember', '1', FALSE, 'id="remember" class="form-check-input"');?>
-                        <?php echo lang('login_remember_label', 'remember', ['class' => 'form-check-label']);?>
-                    </div>
-
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary"><?php echo lang('login_submit_btn'); ?></button>
-                    </div>
-
-                <?php echo form_close();?>
-            </div>
-            <div class="card-footer text-center">
-                <a href="forgot_password"><?php echo lang('login_forgot_password');?></a>
-            </div>
+<?php echo form_open("auth/login");?>
+  <div class="input-group mb-3">
+    <?php echo form_input($identity);?>
+    <div class="input-group-append">
+        <div class="input-group-text">
+            <span class="fas fa-envelope"></span>
         </div>
     </div>
-</div>
+  </div>
+  <div class="input-group mb-3">
+    <?php echo form_input($password);?>
+    <div class="input-group-append">
+        <div class="input-group-text">
+            <span class="fas fa-lock"></span>
+        </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-8">
+      <div class="icheck-primary">
+        <?php echo form_checkbox('remember', '1', FALSE, 'id="remember"');?>
+        <label for="remember">
+          <?php echo lang('login_remember_label'); ?>
+        </label>
+      </div>
+    </div>
+    <!-- /.col -->
+    <div class="col-4">
+      <button type="submit" class="btn btn-primary btn-block"><?php echo lang('login_submit_btn'); ?></button>
+    </div>
+    <!-- /.col -->
+  </div>
+<?php echo form_close();?>
+
+<p class="mb-1">
+  <a href="forgot_password"><?php echo lang('login_forgot_password');?></a>
+</p>

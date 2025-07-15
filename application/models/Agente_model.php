@@ -149,6 +149,32 @@ class Agente_model extends CI_Model {
         $query = $this->db->get('parroquias');
         return $query->result();
     }
+
+    // --- Methods for Dashboards ---
+
+    /**
+     * Get an agent's record based on their Ion Auth user_id.
+     * @param int $user_id
+     * @return object or NULL
+     */
+    public function get_agent_by_user_id($user_id) {
+        $this->db->where('user_id', $user_id);
+        $this->db->where('deleted_at', NULL); // Ensure agent is active
+        $query = $this->db->get('agentes');
+        return $query->row();
+    }
+
+    /**
+     * Get all agents assigned to a specific supervisor.
+     * @param int $supervisor_id The ID of the supervisor (from the 'agentes' table)
+     * @return array
+     */
+    public function get_agents_by_supervisor_id($supervisor_id) {
+        $this->db->where('supervisor_id', $supervisor_id);
+        $this->db->where('deleted_at', NULL);
+        $query = $this->db->get('agentes');
+        return $query->result();
+    }
 }
 /* End of file Agente_model.php */
 /* Location: ./application/models/Agente_model.php */
