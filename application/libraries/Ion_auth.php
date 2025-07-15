@@ -54,7 +54,7 @@ class Ion_auth
          *
          * @var array
          **/
-        public $_cache_user_in_group; // Declared
+        public $_cache_user_in_group;
 
         /**
          * __construct
@@ -67,16 +67,14 @@ class Ion_auth
                 $this->check_compatibility();
 
                 $this->config->load('ion_auth', TRUE);
-                // Using the library loading order from your confirmed snippet
-                $this->load->library(['email', 'session']); // Ensure session is loaded
+                $this->load->library(['email']);
                 $this->lang->load('ion_auth');
                 $this->load->helper(['cookie', 'language','url']);
 
-                // $this->load->library('session'); // This was commented out in your snippet, keeping it so.
+                $this->load->library('session');
 
                 $this->load->model('ion_auth_model');
 
-                // Corrected the broken line to be a single, unbroken line:
                 $this->_cache_user_in_group =& $this->ion_auth_model->_cache_user_in_group;
 
                 $email_config = $this->config->item('email_config', 'ion_auth');
@@ -121,9 +119,11 @@ ias'
         /**
          * __get
          *
-         * Enables the use of CI super-global without having to define an extra variable.
+         * Enables the use of CI super-global without having to define an extra
+variable.
          *
-         * I can't remember where I first saw this, so thank you if you are the original author. -Militis
+         * I can't remember where I first saw this, so thank you if you are the
+original author. -Militis
          *
          * @param    string $var
          *
@@ -144,9 +144,8 @@ ias'
          */
         public function forgotten_password($identity)
         {
-                // Retrieve user information using the correctly configured identity column
-                $identity_column = $this->config->item('identity', 'ion_auth');
-                $user = $this->ion_auth_model->where($identity_column, $identity)
+                // Retrieve user information
+                $user = $this->where($this->ion_auth_model->identity_column, $identity)
                                          ->where('active', 1)
                                          ->users()->row();
 
@@ -158,9 +157,8 @@ ias'
                         if ($code)
                         {
                                 $data = [
-                                        'identity' => $user->{$identity_column},
-                                        'forgotten_password_code' => $code,
-                                        'user_id' => $user->id
+                                        'identity' => $identity,
+                                        'forgotten_password_code' => $code
                                 ];
 
                                 if (!$this->config->item('use_ci_email', 'ion_auth'))
@@ -216,9 +214,8 @@ ias'
                                 if (time() - $user->forgotten_password_time > $expiration)
                                 {
                                         //it has expired
-                                        $identity_column = $this->config->item('identity', 'ion_auth');
-                                        $identity_value = $user->{$identity_column};
-                                        $this->ion_auth_model->clear_forgotten_password_code($identity_value);
+                                        $identity = $user->{$this->config->item('identity', 'ion_auth')};
+                                        $this->ion_auth_model->clear_forgotten_password_code($identity);
                                         $this->set_error('password_change_unsuccessful');
                                         return FALSE;
                                 }
@@ -287,11 +284,11 @@ ias'
                         }
 
                         $activation_code = $this->ion_auth_model->activation_code;
-                        $identity_column = $this->config->item('identity', 'ion_auth');
+                        $identity        = $this->config->item('identity', 'ion_auth');
                         $user            = $this->ion_auth_model->user($id)->row();
 
                         $data = [
-                                'identity'   => $user->{$identity_column},
+                                'identity'   => $user->{$identity},
                                 'id'         => $user->id,
                                 'email'      => $email,
                                 'activation' => $activation_code,
@@ -318,6 +315,7 @@ ias'
                                         $this->set_message('activation_email_successful');
                                         return $id;
                                 }
+
                         }
 
                         $this->ion_auth_model->trigger_events(['post_account_creation', 'post_account_creation_unsuccessful', 'activation_email_unsuccessful']);
@@ -336,26 +334,21 @@ ias'
         {
                 $this->ion_auth_model->trigger_events('logout');
 
-                $identity_column = $this->config->item('identity', 'ion_auth');
+                $identity = $this->config->item('identity', 'ion_auth');
 
-                $session_data_to_unset = [$identity_column, 'id', 'user_id', 'email', 'ion_auth_session_hash', 'last_check', 'old_last_login'];
-                 if ($this->session->has_userdata('username') && $identity_column == 'username') { // Example for username identity
-                    $session_data_to_unset[] = 'username';
-                }
-
-
-                $this->session->unset_userdata($session_data_to_unset);
+                $this->session->unset_userdata([$identity, 'id', 'user_id']);
 
                 // delete the remember me cookies if they exist
                 delete_cookie($this->config->item('remember_cookie_name', 'ion_auth'));
 
-                // Clear all codes from DB for this user - This part is problematic without user context.
-                // For now, we rely on codes becoming invalid over time or on next login.
+                // Clear all codes
+                $this->ion_auth_model->clear_forgotten_password_code($identity);
+                $this->ion_auth_model->clear_remember_code($identity);
 
                 // Destroy the session
                 $this->session->sess_destroy();
 
-                // $this->set_message('logout_successful'); // This might not persist
+                $this->set_message('logout_successful');
                 return TRUE;
         }
 
@@ -441,14 +434,14 @@ ias'
 
         public function deactivate($id = NULL)
         {
-                $this->ion_auth_model->trigger_events('deactivate');
+                $this->trigger_events('deactivate');
 
                 if (!isset($id))
                 {
                         $this->set_error('deactivate_unsuccessful');
                         return FALSE;
                 }
-                else if ($this->logged_in() && $this->get_user_id() == $id)
+                else if ($this->logged_in() && $this->user()->row()->id == $id)
                 {
                         $this->set_error('deactivate_current_user_unsuccessful');
                         return FALSE;
@@ -456,4 +449,5 @@ ias'
 
                 return $this->ion_auth_model->deactivate($id);
         }
+
 }

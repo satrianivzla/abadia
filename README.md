@@ -4,14 +4,15 @@ This is a CodeIgniter 3 application designed to manage sales agents (`agentes`) 
 
 ## Features
 
-*   **Authentication**: Powered by **Ion Auth**, providing a robust system for login, logout, password management, and user groups.
+*   **Authentication**: Powered by **Ion Auth**, providing a robust system for login, logout, password management, and user groups ('admin', 'members', 'leadership').
 *   **Agent Management**: Full CRUD (Create, Read, Update, Delete) functionality for sales agents.
-    *   Profile picture uploads.
+    *   Profile picture uploads, named by the agent's Cédula for organization.
     *   **Soft Deletes**: Deleting an agent moves them to a "Papelera" (Trash) instead of physically deleting them, preserving historical data.
     *   **Access Control**: Only 'admin' and 'leadership' groups can view the Papelera and restore deleted agents.
 *   **Affiliation Module**: A multi-step form for creating new affiliation contracts, including a dynamic family group section.
-*   **DataTables**: Server-side processing for agent lists ensures high performance with large datasets.
-*   **Modern UI**: Built with Bootstrap 5.3 for a responsive and clean user interface.
+*   **DataTables**: Server-side processing for agent lists ensures high performance with large datasets, powered by the `TablesIgniterCI3` library.
+*   **Modern UI**: Built with Bootstrap 5.3 for a responsive and clean user interface, including breadcrumbs for easy navigation.
+*   **Web Installer**: A simple one-click installer to set up the database schema.
 
 ---
 
@@ -37,7 +38,7 @@ You can install the application using the easy web-based installer or by importi
     *   Ensure the database you specify exists and is empty.
 3.  **Configure `config.php`**:
     *   Open `application/config/config.php`.
-    *   Set your `base_url`. For a local XAMPP setup, it might be `http://localhost/abadia/`. **It must end with a slash `/`**.
+    *   Set your `base_url`. For a local XAMPP setup, it might be `http://localhost/your_project_folder/`. **It must end with a slash `/`**.
     *   Set a long, random `encryption_key`. This is critical for security.
 4.  **Configure `ion_auth.php`**:
     *   Open `application/config/ion_auth.php`.
