@@ -58,7 +58,7 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT INTO `users` (`id`, `ip_address`, `username`, `password`, `email`, `active`, `first_name`, `last_name`) VALUES
-(1,'127.0.0.1','administrator','$2y$10$J.MenaBAIFV13XMVLCJq2.83rLz2zKMGg26sgfY9Z5oLBMy6EvL1O','admin@admin.com', 1, 'Admin','istrator');
+(1,'127.0.0.1','administrator','$argon2i$v=19$m=1024,t=2,p=2$VEFSSU4wSzh3cllVdE1JZQ$PDeks/7JoKekQrJa9HlfkXIk8dAeZXOzUxLBwNFbZ44','admin@admin.com', 1, 'Admin','istrator');
 
 CREATE TABLE `users_groups` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,

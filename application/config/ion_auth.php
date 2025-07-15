@@ -64,7 +64,7 @@ $config['join']['groups'] = 'group_id';
  |
  | Bcrypt is the current PHP language default.
  */
-$config['hash_method']                  = 'bcrypt';     // bcrypt, argon2, or ar
+$config['hash_method']                  = 'argon2';     // bcrypt, argon2, or ar
 gon2id
 $config['bcrypt_default_cost']          = defined('PASSWORD_BCRYPT_DEFAULT_COST'
 ) ? PASSWORD_BCRYPT_DEFAULT_COST : 10;
